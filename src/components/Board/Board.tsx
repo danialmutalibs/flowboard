@@ -1,8 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, use } from 'react';
 import Column from '@/components/Column/Column';
 import { Status, Task } from '@/types/task';
+import Modal from '@/components/Modal/Modal';
+import TaskCard from '@/components/Task/TaskCard';
+import TaskForm from '@/components/Task/TaskForm';
 
 const columns: { id: Status; title: string }[] = [
   { id: 'todo', title: 'Todo' },
@@ -38,6 +41,31 @@ export default function Board() {
       createdAt: Date.now(),
     },
   ]);
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  
+  const handleSaveTask = (task: Task) => {
+  setTasks(prev => {
+    const exists = prev.find(t => t.id === task.id);
+    if (exists) {
+      return prev.map(t => (t.id === task.id ? task : t));
+    }
+    return [...prev, task];
+  });
+
+  setModalOpen(false);
+  setEditingTask(null);
+};
+
+<Modal open={modalOpen} onClose={() => setModalOpen(false)}>
+  <TaskForm
+    initialTask={editingTask ?? undefined}
+    onSubmit={handleSaveTask}
+  />
+</Modal>
+
+
 
   
   const tasksByStatus = useMemo(() => {
