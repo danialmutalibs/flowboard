@@ -6,6 +6,9 @@ import Modal from '@/components/Modal/Modal';
 import TaskForm from '@/components/Task/TaskForm';
 import { Task, Status } from '@/types/task';
 import { DndContext, DragEndEvent } from '@dnd-kit/core';
+import { DragOverlay } from '@dnd-kit/core';
+import TaskCard from '@/components/Task/TaskCard';
+
 
 
 const columns: { id: Status; title: string }[] = [
@@ -51,17 +54,29 @@ export default function Board() {
 
   if (!over) return;
 
-  const activeTaskId = active.id as string;
-  const newStatus = over.id as Status;
+  const activeId = active.id as string;
 
-  setTasks(prev =>
-    prev.map(task =>
-      task.id === activeTaskId
-        ? { ...task, status: newStatus }
-        : task
-    )
-  );
+  setTasks(prev => {
+    const activeTask = prev.find(t => t.id === activeId);
+    if (!activeTask) return prev;
+
+    const overId = over.id as Status;
+
+    // If dropped on a column, update status
+    if (columns.some(col => col.id === overId)) {
+      return prev.map(task =>
+        task.id === activeId
+          ? { ...task, status: overId }
+          : task
+      );
+    }
+
+    return prev;
+  });
 };
+
+const [activeTask, setActiveTask] = useState<Task | null>(null);
+
 
 
   // ---------------- DERIVED STATE ----------------
@@ -99,7 +114,15 @@ export default function Board() {
       </div>
 
       {/* Board */}
-      <DndContext onDragEnd={handleDragEnd}>
+      <DndContext onDragStart={(event) => {
+    const task = tasks.find(t => t.id === event.active.id);
+    if (task) setActiveTask(task);
+  }}
+  onDragEnd={(event) => {
+    handleDragEnd(event);
+    setActiveTask(null);
+  }}
+  onDragCancel={() => setActiveTask(null)}>
       <section className="grid grid-cols-1 gap-6 md:grid-cols-3">
         {columns.map(col => (
           <Column
