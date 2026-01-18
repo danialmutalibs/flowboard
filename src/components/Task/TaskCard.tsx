@@ -1,39 +1,41 @@
 'use client';
 
 import { Task } from '@/types/task';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface TaskCardProps {
-  task?: Task; // 👈 allow undefined defensively
+  task?: Task;
   onDelete: (id: string) => void;
   onEdit: (task: Task) => void;
 }
 
-const priorityStyles: Record<Task['priority'], string> = {
-  low: 'bg-green-100 text-green-700',
-  medium: 'bg-yellow-100 text-yellow-700',
-  high: 'bg-red-100 text-red-700',
-};
-
-export default function TaskCard({
-  task,
-  onDelete,
-  onEdit,
-}: TaskCardProps) {
-  // 🔥 HARD GUARD — prevents runtime crash
+export default function TaskCard({ task, onDelete, onEdit }: TaskCardProps) {
   if (!task) return null;
 
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id: task.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
   return (
-    <div className="rounded-lg border bg-white p-3 transition hover:shadow-md">
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="cursor-grab rounded-lg border bg-white p-3 transition hover:shadow-md"
+    >
       <div className="flex items-start justify-between gap-2">
         <h3 className="text-sm font-medium">{task.title}</h3>
-
-        <span
-          className={`rounded px-2 py-0.5 text-xs ${
-            priorityStyles[task.priority]
-          }`}
-        >
-          {task.priority}
-        </span>
       </div>
 
       <div className="mt-2 flex gap-3">
