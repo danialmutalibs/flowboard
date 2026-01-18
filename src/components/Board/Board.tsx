@@ -77,6 +77,26 @@ export default function Board() {
 
   const activeId = active.id as string;
 
+  const tasksByStatus = useMemo(() => {
+  const grouped: Record<Status, Task[]> = {
+    todo: [],
+    'in-progress': [],
+    done: [],
+  };
+
+  for (const task of tasks) {
+    grouped[task.status].push(task);
+  }
+
+  // 🔥 SORT BY ORDER
+  Object.keys(grouped).forEach(status => {
+    grouped[status as Status].sort((a, b) => a.order - b.order);
+  });
+
+  return grouped;
+}, [tasks]);
+
+
   setTasks(prev => {
     const activeTask = prev.find(t => t.id === activeId);
     if (!activeTask) return prev;
