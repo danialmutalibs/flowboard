@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Column from '@/components/Column/Column';
 import Modal from '@/components/Modal/Modal';
 import TaskForm from '@/components/Task/TaskForm';
 import TaskCard from '@/components/Task/TaskCard';
 import { Task, Status } from '@/types/task';
+import { loadTasks, saveTasks } from '@/lib/storage';
 
 import {
   DndContext,
@@ -26,23 +27,27 @@ const columns: { id: Status; title: string }[] = [
 ];
 
 export default function Board() {
-  // ---------------- STATE ----------------
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: '1',
-      title: 'Design Kanban UI',
-      status: 'todo',
-      priority: 'high',
-      order: 0,
-      createdAt: Date.now(),
-    },
-  ]);
+  /* ---------------- STATE ---------------- */
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [hydrated, setHydrated] = useState(false);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
-  // ---------------- DND SETUP ----------------
+  /* ---------------- HYDRATION ---------------- */
+  useEffect(() => {
+    const stored = loadTasks();
+    setTasks(stored);
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    saveTasks(tasks);
+  }, [tasks, hydrated]);
+
+  /* ---------------- DND SETUP ---------------- */
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 6 },
@@ -57,7 +62,7 @@ export default function Board() {
     }),
   };
 
-  // ---------------- CRUD ----------------
+  /* ---------------- CRUD ---------------- */
   const handleSaveTask = (task: Task) => {
     setTasks(prev => {
       const exists = prev.some(t => t.id === task.id);
@@ -74,7 +79,7 @@ export default function Board() {
     setTasks(prev => prev.filter(task => task.id !== id));
   };
 
-  // ---------------- DERIVED STATE ----------------
+  /* ---------------- DERIVED STATE ---------------- */
   const tasksByStatus = useMemo(() => {
     const grouped: Record<Status, Task[]> = {
       todo: [],
@@ -93,7 +98,7 @@ export default function Board() {
     return grouped;
   }, [tasks]);
 
-  // ---------------- DRAG LOGIC ----------------
+  /* ---------------- DRAG LOGIC ---------------- */
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveTask(null);
@@ -110,7 +115,7 @@ export default function Board() {
       const overTask = prev.find(t => t.id === overId);
       const overColumn = columns.find(col => col.id === overId);
 
-      /* ---------- SAME COLUMN REORDER ---------- */
+      /* ---- SAME COLUMN REORDER ---- */
       if (overTask && overTask.status === activeTask.status) {
         const columnTasks = prev
           .filter(t => t.status === activeTask.status)
@@ -127,7 +132,7 @@ export default function Board() {
         });
       }
 
-      /* ---------- MOVE TO ANOTHER COLUMN ---------- */
+      /* ---- MOVE TO ANOTHER COLUMN ---- */
       if (overColumn || overTask) {
         const newStatus = overColumn
           ? overColumn.id
@@ -167,10 +172,19 @@ export default function Board() {
     });
   };
 
-  // ---------------- RENDER ----------------
+  /* ---------------- LOADING GUARD ---------------- */
+  if (!hydrated) {
+    return (
+      <div className="flex h-40 items-center justify-center text-slate-400">
+        Loading board…
+      </div>
+    );
+  }
+
+  /* ---------------- RENDER ---------------- */
   return (
     <>
-      {/* Add Task Button */}
+      {/* Add Task */}
       <div className="mb-6 flex justify-end">
         <button
           type="button"
