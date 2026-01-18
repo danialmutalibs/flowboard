@@ -4,7 +4,9 @@ import { useMemo, useState } from 'react';
 import Column from '@/components/Column/Column';
 import Modal from '@/components/Modal/Modal';
 import TaskForm from '@/components/Task/TaskForm';
+import TaskCard from '@/components/Task/TaskCard';
 import { Task, Status } from '@/types/task';
+
 import {
   DndContext,
   DragEndEvent,
@@ -15,12 +17,7 @@ import {
   closestCorners,
   defaultDropAnimationSideEffects,
 } from '@dnd-kit/core';
-import { useDropAnimation } from '@dnd-kit/core/dist/components/DragOverlay/hooks';
-import TaskCard from '../Task/TaskCard';
-
-
-
-
+import { arrayMove } from '@dnd-kit/sortable';
 
 const columns: { id: Status; title: string }[] = [
   { id: 'todo', title: 'Todo' },
@@ -43,15 +40,26 @@ export default function Board() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
 
+  // ---------------- DND SETUP ----------------
   const sensors = useSensors(
-  useSensor(PointerSensor, {
-    activationConstraint: {
-      distance: 6, //THIS MAKES IT SMOOTH
-    },
-  })
-);
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 6, // smooth drag
+      },
+    })
+  );
 
+  const dropAnimation = {
+    sideEffects: defaultDropAnimationSideEffects({
+      styles: {
+        active: {
+          opacity: '0.4',
+        },
+      },
+    }),
+  };
 
   // ---------------- CRUD ----------------
   const handleSaveTask = (task: Task) => {
@@ -70,64 +78,6 @@ export default function Board() {
     setTasks(prev => prev.filter(task => task.id !== id));
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
-  const { active, over } = event;
-
-  if (!over) return;
-
-  const activeId = active.id as string;
-
-  const tasksByStatus = useMemo(() => {
-  const grouped: Record<Status, Task[]> = {
-    todo: [],
-    'in-progress': [],
-    done: [],
-  };
-
-  for (const task of tasks) {
-    grouped[task.status].push(task);
-  }
-
-  // 🔥 SORT BY ORDER
-  Object.keys(grouped).forEach(status => {
-    grouped[status as Status].sort((a, b) => a.order - b.order);
-  });
-
-  return grouped;
-}, [tasks]);
-
-
-  setTasks(prev => {
-    const activeTask = prev.find(t => t.id === activeId);
-    if (!activeTask) return prev;
-
-    const overId = over.id as Status;
-
-    // If dropped on a column, update status
-    if (columns.some(col => col.id === overId)) {
-      return prev.map(task =>
-        task.id === activeId
-          ? { ...task, status: overId }
-          : task
-      );
-    }
-
-    return prev;
-  });
-};
-
-const [activeTask, setActiveTask] = useState<Task | null>(null);
-
-const dropAnimation = {
-  sideEffects: defaultDropAnimationSideEffects({
-    styles: { 
-      active: {
-        opacity: '0.4',
-      }
-    }
-  })
-};
-
   // ---------------- DERIVED STATE ----------------
   const tasksByStatus = useMemo(() => {
     const grouped: Record<Status, Task[]> = {
@@ -137,13 +87,70 @@ const dropAnimation = {
     };
 
     for (const task of tasks) {
-      if (grouped[task.status]) {
-        grouped[task.status].push(task);
-      }
+      grouped[task.status].push(task);
     }
+
+    // sort by order
+    Object.values(grouped).forEach(list =>
+      list.sort((a, b) => a.order - b.order)
+    );
 
     return grouped;
   }, [tasks]);
+
+  // ---------------- DRAG LOGIC ----------------
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveTask(null);
+
+    if (!over) return;
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    setTasks(prev => {
+      const activeTask = prev.find(t => t.id === activeId);
+      if (!activeTask) return prev;
+
+      // -------- SAME COLUMN REORDER --------
+      const sameColumnTask = prev.find(
+        t => t.id === overId && t.status === activeTask.status
+      );
+
+      if (sameColumnTask) {
+        const columnTasks = prev
+          .filter(t => t.status === activeTask.status)
+          .sort((a, b) => a.order - b.order);
+
+        const oldIndex = columnTasks.findIndex(t => t.id === activeId);
+        const newIndex = columnTasks.findIndex(t => t.id === overId);
+
+        const reordered = arrayMove(columnTasks, oldIndex, newIndex);
+
+        return prev.map(task => {
+          const index = reordered.findIndex(t => t.id === task.id);
+          return index !== -1
+            ? { ...task, order: index }
+            : task;
+        });
+      }
+
+      // -------- MOVE TO ANOTHER COLUMN --------
+      if (columns.some(col => col.id === overId)) {
+        return prev.map(task =>
+          task.id === activeId
+            ? {
+                ...task,
+                status: overId as Status,
+                order: Date.now(),
+              }
+            : task
+        );
+      }
+
+      return prev;
+    });
+  };
 
   // ---------------- RENDER ----------------
   return (
@@ -162,51 +169,46 @@ const dropAnimation = {
         </button>
       </div>
 
-      {/* Board */}
-
-  <DndContext
-  sensors={sensors}
-  collisionDetection={closestCorners}
-  onDragStart={(event) => {
-    const task = tasks.find(t => t.id === event.active.id);
-    if (task) setActiveTask(task);
-  }}
-  onDragEnd={(event) => {
-    handleDragEnd(event);
-    setActiveTask(null);
-  }}
-  onDragCancel={() => setActiveTask(null)}
->
-  {/* BOARD ALWAYS RENDERS */}
-  <section className="grid grid-cols-1 gap-6 md:grid-cols-3">
-    {columns.map(col => (
-      <Column
-        key={col.id}
-        title={col.title}
-        status={col.id}
-        tasks={tasksByStatus[col.id]}
-        onDelete={handleDeleteTask}
-        onEdit={(task) => {
-          setEditingTask(task);
-          setModalOpen(true);
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={event => {
+          const task = tasks.find(t => t.id === event.active.id);
+          if (task) setActiveTask(task);
         }}
-      />
-    ))}
-  </section>
+        onDragEnd={handleDragEnd}
+        onDragCancel={() => setActiveTask(null)}
+      >
+        {/* Board */}
+        <section className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          {columns.map(col => (
+            <Column
+              key={col.id}
+              title={col.title}
+              status={col.id}
+              tasks={tasksByStatus[col.id]}
+              onDelete={handleDeleteTask}
+              onEdit={task => {
+                setEditingTask(task);
+                setModalOpen(true);
+              }}
+            />
+          ))}
+        </section>
 
-  {/* Drag overlay does NOT affect layout */}
-  <DragOverlay dropAnimation={dropAnimation}>
-    {activeTask ? (
-      <div className="w-64">
-        <TaskCard
-          task={activeTask}
-          onDelete={() => {}}
-          onEdit={() => {}}
-        />
-      </div>
-    ) : null}
-  </DragOverlay>
-</DndContext>
+        {/* Drag Overlay */}
+        <DragOverlay dropAnimation={dropAnimation}>
+          {activeTask ? (
+            <div className="w-64">
+              <TaskCard
+                task={activeTask}
+                onDelete={() => {}}
+                onEdit={() => {}}
+              />
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
 
       {/* Modal */}
       <Modal
