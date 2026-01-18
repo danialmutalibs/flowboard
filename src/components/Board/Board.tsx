@@ -45,18 +45,14 @@ export default function Board() {
   // ---------------- DND SETUP ----------------
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 6, // smooth drag
-      },
+      activationConstraint: { distance: 6 },
     })
   );
 
   const dropAnimation = {
     sideEffects: defaultDropAnimationSideEffects({
       styles: {
-        active: {
-          opacity: '0.4',
-        },
+        active: { opacity: '0.4' },
       },
     }),
   };
@@ -90,7 +86,6 @@ export default function Board() {
       grouped[task.status].push(task);
     }
 
-    // sort by order
     Object.values(grouped).forEach(list =>
       list.sort((a, b) => a.order - b.order)
     );
@@ -112,12 +107,11 @@ export default function Board() {
       const activeTask = prev.find(t => t.id === activeId);
       if (!activeTask) return prev;
 
-      // -------- SAME COLUMN REORDER --------
-      const sameColumnTask = prev.find(
-        t => t.id === overId && t.status === activeTask.status
-      );
+      const overTask = prev.find(t => t.id === overId);
+      const overColumn = columns.find(col => col.id === overId);
 
-      if (sameColumnTask) {
+      /* ---------- SAME COLUMN REORDER ---------- */
+      if (overTask && overTask.status === activeTask.status) {
         const columnTasks = prev
           .filter(t => t.status === activeTask.status)
           .sort((a, b) => a.order - b.order);
@@ -129,23 +123,44 @@ export default function Board() {
 
         return prev.map(task => {
           const index = reordered.findIndex(t => t.id === task.id);
-          return index !== -1
-            ? { ...task, order: index }
-            : task;
+          return index !== -1 ? { ...task, order: index } : task;
         });
       }
 
-      // -------- MOVE TO ANOTHER COLUMN --------
-      if (columns.some(col => col.id === overId)) {
-        return prev.map(task =>
-          task.id === activeId
-            ? {
-                ...task,
-                status: overId as Status,
-                order: Date.now(),
-              }
-            : task
-        );
+      /* ---------- MOVE TO ANOTHER COLUMN ---------- */
+      if (overColumn || overTask) {
+        const newStatus = overColumn
+          ? overColumn.id
+          : (overTask!.status as Status);
+
+        const targetTasks = prev
+          .filter(t => t.status === newStatus && t.id !== activeId)
+          .sort((a, b) => a.order - b.order);
+
+        let insertIndex = targetTasks.length;
+
+        if (overTask && overTask.status === newStatus) {
+          insertIndex = targetTasks.findIndex(t => t.id === overId);
+        }
+
+        targetTasks.splice(insertIndex, 0, {
+          ...activeTask,
+          status: newStatus,
+        });
+
+        return prev.map(task => {
+          const idx = targetTasks.findIndex(t => t.id === task.id);
+
+          if (task.id === activeId) {
+            return { ...task, status: newStatus, order: insertIndex };
+          }
+
+          if (idx !== -1) {
+            return { ...task, order: idx };
+          }
+
+          return task;
+        });
       }
 
       return prev;
