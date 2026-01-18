@@ -5,6 +5,8 @@ import Column from '@/components/Column/Column';
 import Modal from '@/components/Modal/Modal';
 import TaskForm from '@/components/Task/TaskForm';
 import { Task, Status } from '@/types/task';
+import { DndContext, DragEndEvent } from '@dnd-kit/core';
+
 
 const columns: { id: Status; title: string }[] = [
   { id: 'todo', title: 'Todo' },
@@ -44,6 +46,24 @@ export default function Board() {
     setTasks(prev => prev.filter(task => task.id !== id));
   };
 
+  const handleDragEnd = (event: DragEndEvent) => {
+  const { active, over } = event;
+
+  if (!over) return;
+
+  const activeTaskId = active.id as string;
+  const newStatus = over.id as Status;
+
+  setTasks(prev =>
+    prev.map(task =>
+      task.id === activeTaskId
+        ? { ...task, status: newStatus }
+        : task
+    )
+  );
+};
+
+
   // ---------------- DERIVED STATE ----------------
   const tasksByStatus = useMemo(() => {
     const grouped: Record<Status, Task[]> = {
@@ -79,6 +99,7 @@ export default function Board() {
       </div>
 
       {/* Board */}
+      <DndContext onDragEnd={handleDragEnd}>
       <section className="grid grid-cols-1 gap-6 md:grid-cols-3">
         {columns.map(col => (
           <Column
@@ -95,6 +116,7 @@ export default function Board() {
           />
         ))}
       </section>
+      </DndContext>
 
       {/* Modal */}
       <Modal
