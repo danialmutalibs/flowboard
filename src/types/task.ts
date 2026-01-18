@@ -8,5 +8,6 @@ export interface Task {
   description?: string;
   status: Status;
   priority: 'low' | 'medium' | 'high';
+  order: number;
   createdAt: number;
 }

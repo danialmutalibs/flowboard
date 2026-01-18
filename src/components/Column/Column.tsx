@@ -31,7 +31,7 @@ export default function Column({
   return (
     <div
       ref={setNodeRef}
-      className={`flex flex-col rounded-xl bg-white p-4 shadow-sm transition-colors ${
+      className={`flex min-h-[200px] flex-col rounded-xl bg-white p-4 shadow-sm transition-colors ${
         isOver ? 'bg-slate-50' : ''
       }`}
     >

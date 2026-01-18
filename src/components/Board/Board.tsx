@@ -16,6 +16,7 @@ import {
   defaultDropAnimationSideEffects,
 } from '@dnd-kit/core';
 import { useDropAnimation } from '@dnd-kit/core/dist/components/DragOverlay/hooks';
+import TaskCard from '../Task/TaskCard';
 
 
 
@@ -142,8 +143,10 @@ const dropAnimation = {
 
       {/* Board */}
 
-  <DragOverlay dropAnimation={dropAnimation}>
-  <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={(event) => {
+  <DndContext
+  sensors={sensors}
+  collisionDetection={closestCorners}
+  onDragStart={(event) => {
     const task = tasks.find(t => t.id === event.active.id);
     if (task) setActiveTask(task);
   }}
@@ -151,25 +154,38 @@ const dropAnimation = {
     handleDragEnd(event);
     setActiveTask(null);
   }}
-  onDragCancel={() => setActiveTask(null)}>
-      <section className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        {columns.map(col => (
-          <Column
-            key={col.id}
-            title={col.title}
-            status={col.id}
-            tasks={tasksByStatus[col.id]}
-            onDelete={handleDeleteTask}
-            onEdit={task => {
-              if (!task) return; // extra safety
-              setEditingTask(task);
-              setModalOpen(true);
-            }}
-          />
-        ))}
-      </section>
-      </DndContext>
-      </DragOverlay>
+  onDragCancel={() => setActiveTask(null)}
+>
+  {/* BOARD ALWAYS RENDERS */}
+  <section className="grid grid-cols-1 gap-6 md:grid-cols-3">
+    {columns.map(col => (
+      <Column
+        key={col.id}
+        title={col.title}
+        status={col.id}
+        tasks={tasksByStatus[col.id]}
+        onDelete={handleDeleteTask}
+        onEdit={(task) => {
+          setEditingTask(task);
+          setModalOpen(true);
+        }}
+      />
+    ))}
+  </section>
+
+  {/* Drag overlay does NOT affect layout */}
+  <DragOverlay dropAnimation={dropAnimation}>
+    {activeTask ? (
+      <div className="w-64">
+        <TaskCard
+          task={activeTask}
+          onDelete={() => {}}
+          onEdit={() => {}}
+        />
+      </div>
+    ) : null}
+  </DragOverlay>
+</DndContext>
 
       {/* Modal */}
       <Modal
