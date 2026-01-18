@@ -10,7 +10,11 @@ interface TaskCardProps {
   onEdit: (task: Task) => void;
 }
 
-export default function TaskCard({ task, onDelete, onEdit }: TaskCardProps) {
+export default function TaskCard({
+  task,
+  onDelete,
+  onEdit,
+}: TaskCardProps) {
   if (!task) return null;
 
   const {
@@ -30,27 +34,37 @@ export default function TaskCard({ task, onDelete, onEdit }: TaskCardProps) {
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
-      className="cursor-grab rounded-lg border bg-white p-3 transition hover:shadow-md"
+      className="rounded-lg border bg-white p-3 shadow-sm"
     >
-      <div className="flex items-start justify-between gap-2">
+      {/* HEADER + DRAG HANDLE */}
+      <div className="mb-2 flex items-center justify-between">
         <h3 className="text-sm font-medium">{task.title}</h3>
+
+        {/* 👇 DRAG HANDLE (ONLY THIS DRAGS) */}
+        <span
+          {...attributes}
+          {...listeners}
+          className="cursor-grab select-none text-slate-400 active:cursor-grabbing"
+          title="Drag"
+        >
+          ⠿
+        </span>
       </div>
 
-      <div className="mt-2 flex gap-3">
+      {/* ACTIONS */}
+      <div className="flex gap-3">
         <button
+          type="button"
           onClick={() => onEdit(task)}
           className="text-xs text-blue-600 hover:underline"
-          type="button"
         >
           Edit
         </button>
 
         <button
+          type="button"
           onClick={() => onDelete(task.id)}
           className="text-xs text-red-600 hover:underline"
-          type="button"
         >
           Delete
         </button>
