@@ -36,6 +36,7 @@ export default function Board() {
       title: 'Design Kanban UI',
       status: 'todo',
       priority: 'high',
+      order: 0,
       createdAt: Date.now(),
     },
   ]);

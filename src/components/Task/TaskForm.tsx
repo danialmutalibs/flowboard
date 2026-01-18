@@ -35,6 +35,7 @@ export default function TaskForm({ initialTask, onSubmit }: TaskFormProps) {
       title,
       status,
       priority,
+      order: initialTask?.order ?? Date.now(),
       createdAt: initialTask?.createdAt ?? Date.now(),
     });
   };
