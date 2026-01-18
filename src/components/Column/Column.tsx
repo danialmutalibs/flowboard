@@ -4,6 +4,7 @@ import { Task, Status } from '@/types/task';
 import TaskCard from '@/components/Task/TaskCard';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useDroppable } from '@dnd-kit/core';
+import { useAutoAnimate } from '@formkit/auto-animate/react';
 
 interface ColumnProps {
   title: string;
@@ -25,6 +26,8 @@ export default function Column({
     id: status,
   });
 
+  const [parent] = useAutoAnimate({ duration: 150 });
+
   return (
     <div
       ref={setNodeRef}
@@ -41,11 +44,13 @@ export default function Column({
       </div>
 
       {/* Task list */}
+
+      
       <SortableContext
         items={tasks.map(task => task.id)}
         strategy={verticalListSortingStrategy}
       >
-        <div className="flex flex-1 flex-col gap-3">
+        <div ref={parent} className="flex flex-1 flex-col gap-3">
           {tasks.length === 0 && (
             <p className="text-sm text-slate-400">No tasks yet</p>
           )}

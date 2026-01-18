@@ -3,6 +3,7 @@
 import { Task } from '@/types/task';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { defaultDropAnimationSideEffects } from '@dnd-kit/core';
 
 interface TaskCardProps {
   task?: Task;
@@ -29,6 +30,16 @@ export default function TaskCard({
     transform: CSS.Transform.toString(transform),
     transition,
   };
+
+  const dropAnimation = {
+    sideEffects: defaultDropAnimationSideEffects({
+      styles: {
+        active: {
+          opacity: '0.4',
+        }
+      }
+    })
+  }
 
   return (
     <div

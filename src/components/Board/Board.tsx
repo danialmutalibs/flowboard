@@ -5,9 +5,19 @@ import Column from '@/components/Column/Column';
 import Modal from '@/components/Modal/Modal';
 import TaskForm from '@/components/Task/TaskForm';
 import { Task, Status } from '@/types/task';
-import { DndContext, DragEndEvent } from '@dnd-kit/core';
-import { DragOverlay } from '@dnd-kit/core';
-import TaskCard from '@/components/Task/TaskCard';
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCorners,
+  defaultDropAnimationSideEffects,
+} from '@dnd-kit/core';
+import { useDropAnimation } from '@dnd-kit/core/dist/components/DragOverlay/hooks';
+
+
 
 
 
@@ -31,6 +41,15 @@ export default function Board() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+
+  const sensors = useSensors(
+  useSensor(PointerSensor, {
+    activationConstraint: {
+      distance: 6, //THIS MAKES IT SMOOTH
+    },
+  })
+);
+
 
   // ---------------- CRUD ----------------
   const handleSaveTask = (task: Task) => {
@@ -77,7 +96,15 @@ export default function Board() {
 
 const [activeTask, setActiveTask] = useState<Task | null>(null);
 
-
+const dropAnimation = {
+  sideEffects: defaultDropAnimationSideEffects({
+    styles: { 
+      active: {
+        opacity: '0.4',
+      }
+    }
+  })
+};
 
   // ---------------- DERIVED STATE ----------------
   const tasksByStatus = useMemo(() => {
@@ -114,7 +141,9 @@ const [activeTask, setActiveTask] = useState<Task | null>(null);
       </div>
 
       {/* Board */}
-      <DndContext onDragStart={(event) => {
+
+  <DragOverlay dropAnimation={dropAnimation}>
+  <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={(event) => {
     const task = tasks.find(t => t.id === event.active.id);
     if (task) setActiveTask(task);
   }}
@@ -140,6 +169,7 @@ const [activeTask, setActiveTask] = useState<Task | null>(null);
         ))}
       </section>
       </DndContext>
+      </DragOverlay>
 
       {/* Modal */}
       <Modal
