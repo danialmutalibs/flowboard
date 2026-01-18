@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useMemo, use } from 'react';
+import { useMemo, useState } from 'react';
 import Column from '@/components/Column/Column';
-import { Status, Task } from '@/types/task';
 import Modal from '@/components/Modal/Modal';
-import TaskCard from '@/components/Task/TaskCard';
 import TaskForm from '@/components/Task/TaskForm';
+import { Task, Status } from '@/types/task';
 
 const columns: { id: Status; title: string }[] = [
   { id: 'todo', title: 'Todo' },
@@ -13,81 +12,103 @@ const columns: { id: Status; title: string }[] = [
   { id: 'done', title: 'Done' },
 ];
 
-
 export default function Board() {
+  // ---------------- STATE ----------------
   const [tasks, setTasks] = useState<Task[]>([
     {
       id: '1',
-      title: 'Task 1',
-      description: 'Description for Task 1',
+      title: 'Design Kanban UI',
       status: 'todo',
       priority: 'high',
-      createdAt: Date.now(),
-    },
-    {
-      id: '2',
-      title: 'Task 2',
-      description: 'Description for Task 2',
-      status: 'in-progress',
-      priority: 'medium',
-      createdAt: Date.now(),
-    },
-    {
-      id: '3',
-      title: 'Task 3',
-      description: 'Description for Task 3',
-      status: 'done',
-      priority: 'low',
       createdAt: Date.now(),
     },
   ]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  
+
+  // ---------------- CRUD ----------------
   const handleSaveTask = (task: Task) => {
-  setTasks(prev => {
-    const exists = prev.find(t => t.id === task.id);
-    if (exists) {
-      return prev.map(t => (t.id === task.id ? task : t));
-    }
-    return [...prev, task];
-  });
+    setTasks(prev => {
+      const exists = prev.some(t => t.id === task.id);
+      return exists
+        ? prev.map(t => (t.id === task.id ? task : t))
+        : [...prev, task];
+    });
 
-  setModalOpen(false);
-  setEditingTask(null);
-};
+    setModalOpen(false);
+    setEditingTask(null);
+  };
 
-<Modal open={modalOpen} onClose={() => setModalOpen(false)}>
-  <TaskForm
-    initialTask={editingTask ?? undefined}
-    onSubmit={handleSaveTask}
-  />
-</Modal>
+  const handleDeleteTask = (id: string) => {
+    setTasks(prev => prev.filter(task => task.id !== id));
+  };
 
-
-
-  
+  // ---------------- DERIVED STATE ----------------
   const tasksByStatus = useMemo(() => {
-    return columns.reduce<Record<Status, Task[]>>((acc, col) => {
-      acc[col.id] = tasks.filter(task => task.status === col.id);
-      return acc;
-    }, {} as Record<Status, Task[]>);
+    const grouped: Record<Status, Task[]> = {
+      todo: [],
+      'in-progress': [],
+      done: [],
+    };
+
+    for (const task of tasks) {
+      if (grouped[task.status]) {
+        grouped[task.status].push(task);
+      }
+    }
+
+    return grouped;
   }, [tasks]);
 
+  // ---------------- RENDER ----------------
   return (
-    <section className="grid grid-cols-1 gap-6 md:grid-cols-3">
-      {columns.map(column => (
-        <Column
-          key={column.id}
-          title={column.title}
-          status={column.id}
-          tasks={tasksByStatus[column.id]}
-          onDelete={(id: string) =>
-            setTasks(prev => prev.filter(task => task.id !== id))
-          }
+    <>
+      {/* Add Task Button */}
+      <div className="mb-6 flex justify-end">
+        <button
+          type="button"
+          onClick={() => {
+            setEditingTask(null);
+            setModalOpen(true);
+          }}
+          className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+        >
+          + Add Task
+        </button>
+      </div>
+
+      {/* Board */}
+      <section className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        {columns.map(col => (
+          <Column
+            key={col.id}
+            title={col.title}
+            status={col.id}
+            tasks={tasksByStatus[col.id]}
+            onDelete={handleDeleteTask}
+            onEdit={task => {
+              if (!task) return; // extra safety
+              setEditingTask(task);
+              setModalOpen(true);
+            }}
+          />
+        ))}
+      </section>
+
+      {/* Modal */}
+      <Modal
+        open={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          setEditingTask(null);
+        }}
+      >
+        <TaskForm
+          initialTask={editingTask ?? undefined}
+          onSubmit={handleSaveTask}
         />
-      ))}
-    </section>
-  )
+      </Modal>
+    </>
+  );
 }

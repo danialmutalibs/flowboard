@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Task, Status, Priority } from '@/types/task';
 import { v4 as uuid } from 'uuid';
 
@@ -10,13 +10,22 @@ interface TaskFormProps {
 }
 
 export default function TaskForm({ initialTask, onSubmit }: TaskFormProps) {
-  const [title, setTitle] = useState(initialTask?.title ?? '');
-  const [priority, setPriority] = useState<Priority>(
-    initialTask?.priority ?? 'medium'
-  );
-  const [status, setStatus] = useState<Status>(
-    initialTask?.status ?? 'todo'
-  );
+  const [title, setTitle] = useState('');
+  const [priority, setPriority] = useState<Priority>('medium');
+  const [status, setStatus] = useState<Status>('todo');
+
+  // 🔥 IMPORTANT: sync state when editing changes
+  useEffect(() => {
+    if (initialTask) {
+      setTitle(initialTask.title);
+      setPriority(initialTask.priority);
+      setStatus(initialTask.status);
+    } else {
+      setTitle('');
+      setPriority('medium');
+      setStatus('todo');
+    }
+  }, [initialTask]);
 
   const handleSubmit = () => {
     if (!title.trim()) return;
@@ -66,6 +75,7 @@ export default function TaskForm({ initialTask, onSubmit }: TaskFormProps) {
       <button
         onClick={handleSubmit}
         className="w-full rounded bg-blue-600 py-2 text-white hover:bg-blue-700"
+        type="button"
       >
         Save
       </button>
