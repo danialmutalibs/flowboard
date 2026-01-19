@@ -1,9 +1,19 @@
-# FlowBoard 🧩
+      # FlowBoard 🧩
 
 FlowBoard is a lightweight Kanban-style task management board built with Next.js.  
 It supports drag-and-drop task reordering, cross-column movement, and persistent state using localStorage.
 
 This project focuses on clean component architecture, predictable state management, and polished user experience.
+
+📌 What I Learned
+
+Implementing production-grade drag-and-drop interactions
+
+Managing complex UI state without external state libraries
+
+Designing reusable, predictable component APIs
+
+Handling client-side persistence safely in a Next.js environment
 
 ---
 
@@ -65,3 +75,5 @@ State flows **top-down**, with all mutations centralized in the board to keep lo
 ```bash
 npm install
 npm run dev
+
+
