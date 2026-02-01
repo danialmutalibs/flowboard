@@ -14,7 +14,6 @@ export default function TaskForm({ initialTask, onSubmit }: TaskFormProps) {
   const [priority, setPriority] = useState<Priority>('medium');
   const [status, setStatus] = useState<Status>('todo');
 
-  // 🔥 IMPORTANT: sync state when editing changes
   useEffect(() => {
     if (initialTask) {
       setTitle(initialTask.title);
@@ -35,7 +34,7 @@ export default function TaskForm({ initialTask, onSubmit }: TaskFormProps) {
       title,
       status,
       priority,
-      order: initialTask?.order ?? Date.now(),
+      order: initialTask?.order ?? Date.now(), // 🔥 FIX
       createdAt: initialTask?.createdAt ?? Date.now(),
     });
   };
@@ -47,16 +46,16 @@ export default function TaskForm({ initialTask, onSubmit }: TaskFormProps) {
       </h2>
 
       <input
-        className="w-full rounded border px-3 py-2"
-        placeholder="Task title"
         value={title}
         onChange={e => setTitle(e.target.value)}
+        className="w-full rounded border px-3 py-2"
+        placeholder="Task title"
       />
 
       <select
-        className="w-full rounded border px-3 py-2"
         value={priority}
         onChange={e => setPriority(e.target.value as Priority)}
+        className="w-full rounded border px-3 py-2"
       >
         <option value="low">Low</option>
         <option value="medium">Medium</option>
@@ -64,9 +63,9 @@ export default function TaskForm({ initialTask, onSubmit }: TaskFormProps) {
       </select>
 
       <select
-        className="w-full rounded border px-3 py-2"
         value={status}
         onChange={e => setStatus(e.target.value as Status)}
+        className="w-full rounded border px-3 py-2"
       >
         <option value="todo">Todo</option>
         <option value="in-progress">In Progress</option>
@@ -76,7 +75,6 @@ export default function TaskForm({ initialTask, onSubmit }: TaskFormProps) {
       <button
         onClick={handleSubmit}
         className="w-full rounded bg-blue-600 py-2 text-white hover:bg-blue-700"
-        type="button"
       >
         Save
       </button>

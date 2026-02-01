@@ -71,11 +71,12 @@ export default function Board() {
 
   /* ---------------- CRUD ---------------- */
   const handleSaveTask = (task: Task) => {
-    setTasks(prev =>
-      prev.some(t => t.id === task.id)
+    setTasks(prev => {
+      const exists = prev.some(t => t.id === task.id);
+      return exists
         ? prev.map(t => (t.id === task.id ? task : t))
-        : [...prev, task]
-    );
+        : [...prev, { ...task, order: task.order ?? Date.now() }];
+    });
 
     setModalOpen(false);
     setEditingTask(null);
@@ -93,12 +94,10 @@ export default function Board() {
       done: [],
     };
 
-    // group
     for (const task of tasks) {
       grouped[task.status].push(task);
     }
 
-    // filter + sort per column
     Object.values(grouped).forEach(list => {
       const filtered =
         priorityFilter === 'all'
@@ -106,16 +105,11 @@ export default function Board() {
           : list.filter(task => task.priority === priorityFilter);
 
       filtered.sort((a, b) => {
-        if (sortBy === 'createdAt') {
-          return b.createdAt - a.createdAt;
-        }
-
+        if (sortBy === 'createdAt') return b.createdAt - a.createdAt;
         if (sortBy === 'priority') {
           const rank = { high: 3, medium: 2, low: 1 };
           return rank[b.priority] - rank[a.priority];
         }
-
-        // manual order (DnD)
         return a.order - b.order;
       });
 
@@ -162,7 +156,7 @@ export default function Board() {
         });
       }
 
-      // move to another column
+      // move across columns
       if (overColumn || overTask) {
         const newStatus = overColumn
           ? overColumn.id
@@ -213,7 +207,6 @@ export default function Board() {
   /* ---------------- RENDER ---------------- */
   return (
     <>
-      {/* Filters + Actions */}
       <div className="mb-6 flex flex-wrap items-center gap-4">
         <select
           value={priorityFilter}
