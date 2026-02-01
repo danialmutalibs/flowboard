@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+      # FlowBoard 🧩
 
-## Getting Started
+FlowBoard is a lightweight Kanban-style task management board built with Next.js.  
+It supports drag-and-drop task reordering, cross-column movement, and persistent state using localStorage.
 
-First, run the development server:
+This project focuses on clean component architecture, predictable state management, and polished user experience.
+
+📌 What I Learned
+
+Implementing production-grade drag-and-drop interactions
+
+Managing complex UI state without external state libraries
+
+Designing reusable, predictable component APIs
+
+Handling client-side persistence safely in a Next.js environment
+
+---
+
+## ✨ Features
+
+- ✅ Create, edit, and delete tasks
+- 🧲 Drag & drop tasks within a column (reorder)
+- 🔁 Drag tasks across columns with correct insertion position
+- 💾 Persistent state using localStorage
+- 🎯 Smooth drag interactions with DragOverlay and sensors
+- 🧠 Strong TypeScript typing and domain modeling
+- 🖥️ Responsive, clean UI with Tailwind CSS
+
+---
+
+## 🛠 Tech Stack
+
+- **Next.js (App Router)**
+- **React + TypeScript**
+- **Tailwind CSS**
+- **@dnd-kit** (drag-and-drop)
+- **localStorage** (persistence)
+
+---
+
+## 🧱 Architecture Overview
+
+- `Board`  
+  Owns all task state and handles drag-and-drop logic.
+
+- `Column`  
+  Acts as a droppable container and renders sortable tasks.
+
+- `TaskCard`  
+  Presentational component with a dedicated drag handle.
+
+- `TaskForm + Modal`  
+  Shared UI for creating and editing tasks.
+
+State flows **top-down**, with all mutations centralized in the board to keep logic predictable and easy to reason about.
+
+---
+
+## 🧠 Key Design Decisions
+
+- **Order-based sorting**  
+  Tasks include an explicit `order` field to support stable reordering.
+
+- **Drag handles instead of full-card dragging**  
+  Prevents pointer conflicts with Edit/Delete actions.
+
+- **Guarded localStorage hydration**  
+  Prevents SSR issues and U
+
+---
+
+## 🚀 Getting Started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
