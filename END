@@ -1,0 +1,29 @@
+[33ma36e2c6[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Merge branch 'main' of https://github.com/danialmutalibs/flowboard
+[33mb605661[m feat: add theme utility for dark mode persistence
+[33m81ceba9[m chore: enable class-based dark mode in tailwind
+[33mbbe2638[m fix: ensure 'all priorities' filter shows all tasks correctly
+[33m4fb4622[m fix: ensure new tasks appear correctly with filters and sorting
+[33m58e1a20[m feat: add task filtering and sorting as derived board state
+[33me786df9[m feat: optimize drag and drop for touch devices and mobile UX
+[33mcacb815[m Enhance README with learning experiences
+[33ma9282fa[m Revise README with project details and setup instructions
+[33m02e8794[m feat: persist kanban board state with localStorage
+[33m4013d0c[m feat: add localStorage helper for task persistence
+[33mfe54630[m fix: correct cross-column drop positioning and kanban ordering
+[33mbb074c8[m feat: support smooth kanban reordering and cross-column drag
+[33ma71290f[m feat: sort tasks by order within columns
+[33m2fb492d[m feat: assign order to tasks on create and edit
+[33m234340e[m feat: add order field to task model
+[33m52bbe7e[m feat: improve dnd smoothness with pointer sensors
+[33maecb7ff[m fix: restore edit and delete by using drag handle for dnd
+[33m1c09f6b[m feat: finalize droppable column with sortable tasks
+[33m171dae9[m feat: update task status on drag and drop
+[33m4623649[m feat: make columns droppable with sortable context
+[33m62a4a06[m feat: make task cards draggable
+[33m0c03341[m chore: install dnd-kit for drag and drop
+[33m8eb393e[m fix: complete Column component with edit and delete handlers
+[33m856260d[m feat: enable task editing via modal
+[33mb6c4038[m feat: add task form for create and edit
+[33m1bdbf35[m feat: add reusable modal component
+[33mfb3c9d9[m refactor: align TaskCard props to accept Task domain object
+[33me3bad3d[m Initial commit from Create Next App

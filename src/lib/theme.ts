@@ -1,18 +1,20 @@
-const THEME_KEY = 'flowboard-theme';
-
 export type Theme = 'light' | 'dark';
 
-export function getStoredTheme(): Theme {
+const KEY = 'flowboard-theme';
+
+export function getTheme(): Theme {
   if (typeof window === 'undefined') return 'light';
-  return (localStorage.getItem(THEME_KEY) as Theme) || 'light';
+  return (localStorage.getItem(KEY) as Theme) ?? 'light';
 }
 
 export function applyTheme(theme: Theme) {
-  if (typeof window === 'undefined') return;
-
   const root = document.documentElement;
-  root.classList.remove('light', 'dark');
-  root.classList.add(theme);
 
-  localStorage.setItem(THEME_KEY, theme);
+  if (theme === 'dark') {
+    root.classList.add('dark');
+  } else {
+    root.classList.remove('dark');
+  }
+
+  localStorage.setItem(KEY, theme);
 }
