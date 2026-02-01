@@ -21,6 +21,8 @@ import {
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 
+type SortOption = 'order' | 'createdAt' | 'priority';
+
 const columns: { id: Status; title: string }[] = [
   { id: 'todo', title: 'Todo' },
   { id: 'in-progress', title: 'In Progress' },
@@ -36,6 +38,12 @@ export default function Board() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
+  /* -------- FILTER + SORT STATE -------- */
+  const [priorityFilter, setPriorityFilter] =
+    useState<'all' | 'low' | 'medium' | 'high'>('all');
+
+  const [sortBy, setSortBy] = useState<SortOption>('order');
+
   /* ---------------- HYDRATION ---------------- */
   useEffect(() => {
     setTasks(loadTasks());
@@ -47,35 +55,27 @@ export default function Board() {
     saveTasks(tasks);
   }, [tasks, hydrated]);
 
-  /* ---------------- DND SETUP (TOUCH OPTIMIZED) ---------------- */
+  /* ---------------- DND SETUP ---------------- */
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 },
-    }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 200,
-        tolerance: 8,
-      },
+      activationConstraint: { delay: 200, tolerance: 8 },
     })
   );
 
   const dropAnimation = {
     sideEffects: defaultDropAnimationSideEffects({
-      styles: {
-        active: { opacity: '0.4' },
-      },
+      styles: { active: { opacity: '0.4' } },
     }),
   };
 
   /* ---------------- CRUD ---------------- */
   const handleSaveTask = (task: Task) => {
-    setTasks(prev => {
-      const exists = prev.some(t => t.id === task.id);
-      return exists
+    setTasks(prev =>
+      prev.some(t => t.id === task.id)
         ? prev.map(t => (t.id === task.id ? task : t))
-        : [...prev, task];
-    });
+        : [...prev, task]
+    );
 
     setModalOpen(false);
     setEditingTask(null);
@@ -85,7 +85,7 @@ export default function Board() {
     setTasks(prev => prev.filter(task => task.id !== id));
   };
 
-  /* ---------------- DERIVED STATE ---------------- */
+  /* -------- DERIVED STATE (FILTER + SORT) -------- */
   const tasksByStatus = useMemo(() => {
     const grouped: Record<Status, Task[]> = {
       todo: [],
@@ -93,16 +93,38 @@ export default function Board() {
       done: [],
     };
 
+    // group
     for (const task of tasks) {
       grouped[task.status].push(task);
     }
 
-    Object.values(grouped).forEach(list =>
-      list.sort((a, b) => a.order - b.order)
-    );
+    // filter + sort per column
+    Object.values(grouped).forEach(list => {
+      const filtered =
+        priorityFilter === 'all'
+          ? list
+          : list.filter(task => task.priority === priorityFilter);
+
+      filtered.sort((a, b) => {
+        if (sortBy === 'createdAt') {
+          return b.createdAt - a.createdAt;
+        }
+
+        if (sortBy === 'priority') {
+          const rank = { high: 3, medium: 2, low: 1 };
+          return rank[b.priority] - rank[a.priority];
+        }
+
+        // manual order (DnD)
+        return a.order - b.order;
+      });
+
+      list.length = 0;
+      list.push(...filtered);
+    });
 
     return grouped;
-  }, [tasks]);
+  }, [tasks, priorityFilter, sortBy]);
 
   /* ---------------- DRAG LOGIC ---------------- */
   const handleDragEnd = (event: DragEndEvent) => {
@@ -122,7 +144,7 @@ export default function Board() {
       const overTask = prev.find(t => t.id === overId);
       const overColumn = columns.find(col => col.id === overId);
 
-      /* ---- SAME COLUMN REORDER ---- */
+      // same column reorder
       if (overTask && overTask.status === activeTask.status) {
         const columnTasks = prev
           .filter(t => t.status === activeTask.status)
@@ -140,7 +162,7 @@ export default function Board() {
         });
       }
 
-      /* ---- MOVE TO ANOTHER COLUMN ---- */
+      // move to another column
       if (overColumn || overTask) {
         const newStatus = overColumn
           ? overColumn.id
@@ -191,25 +213,48 @@ export default function Board() {
   /* ---------------- RENDER ---------------- */
   return (
     <>
-      <div className="mb-6 flex justify-end">
-        <button
-          type="button"
-          onClick={() => {
-            setEditingTask(null);
-            setModalOpen(true);
-          }}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+      {/* Filters + Actions */}
+      <div className="mb-6 flex flex-wrap items-center gap-4">
+        <select
+          value={priorityFilter}
+          onChange={e => setPriorityFilter(e.target.value as any)}
+          className="rounded border px-3 py-2 text-sm"
         >
-          + Add Task
-        </button>
+          <option value="all">All priorities</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+
+        <select
+          value={sortBy}
+          onChange={e => setSortBy(e.target.value as SortOption)}
+          className="rounded border px-3 py-2 text-sm"
+        >
+          <option value="order">Manual order</option>
+          <option value="createdAt">Newest first</option>
+          <option value="priority">Priority</option>
+        </select>
+
+        <div className="ml-auto">
+          <button
+            onClick={() => {
+              setEditingTask(null);
+              setModalOpen(true);
+            }}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+          >
+            + Add Task
+          </button>
+        </div>
       </div>
 
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
-        onDragStart={event => {
+        onDragStart={e => {
           document.body.style.overflow = 'hidden';
-          const task = tasks.find(t => t.id === event.active.id);
+          const task = tasks.find(t => t.id === e.active.id);
           if (task) setActiveTask(task);
         }}
         onDragEnd={handleDragEnd}
