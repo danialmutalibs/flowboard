@@ -13,6 +13,7 @@ import {
   DragEndEvent,
   DragOverlay,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   closestCorners,
@@ -37,8 +38,7 @@ export default function Board() {
 
   /* ---------------- HYDRATION ---------------- */
   useEffect(() => {
-    const stored = loadTasks();
-    setTasks(stored);
+    setTasks(loadTasks());
     setHydrated(true);
   }, []);
 
@@ -47,10 +47,16 @@ export default function Board() {
     saveTasks(tasks);
   }, [tasks, hydrated]);
 
-  /* ---------------- DND SETUP ---------------- */
+  /* ---------------- DND SETUP (TOUCH OPTIMIZED) ---------------- */
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 6 },
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 200,
+        tolerance: 8,
+      },
     })
   );
 
@@ -101,6 +107,7 @@ export default function Board() {
   /* ---------------- DRAG LOGIC ---------------- */
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    document.body.style.overflow = '';
     setActiveTask(null);
 
     if (!over) return;
@@ -121,10 +128,11 @@ export default function Board() {
           .filter(t => t.status === activeTask.status)
           .sort((a, b) => a.order - b.order);
 
-        const oldIndex = columnTasks.findIndex(t => t.id === activeId);
-        const newIndex = columnTasks.findIndex(t => t.id === overId);
-
-        const reordered = arrayMove(columnTasks, oldIndex, newIndex);
+        const reordered = arrayMove(
+          columnTasks,
+          columnTasks.findIndex(t => t.id === activeId),
+          columnTasks.findIndex(t => t.id === overId)
+        );
 
         return prev.map(task => {
           const index = reordered.findIndex(t => t.id === task.id);
@@ -172,7 +180,6 @@ export default function Board() {
     });
   };
 
-  /* ---------------- LOADING GUARD ---------------- */
   if (!hydrated) {
     return (
       <div className="flex h-40 items-center justify-center text-slate-400">
@@ -184,7 +191,6 @@ export default function Board() {
   /* ---------------- RENDER ---------------- */
   return (
     <>
-      {/* Add Task */}
       <div className="mb-6 flex justify-end">
         <button
           type="button"
@@ -202,13 +208,16 @@ export default function Board() {
         sensors={sensors}
         collisionDetection={closestCorners}
         onDragStart={event => {
+          document.body.style.overflow = 'hidden';
           const task = tasks.find(t => t.id === event.active.id);
           if (task) setActiveTask(task);
         }}
         onDragEnd={handleDragEnd}
-        onDragCancel={() => setActiveTask(null)}
+        onDragCancel={() => {
+          document.body.style.overflow = '';
+          setActiveTask(null);
+        }}
       >
-        {/* Board */}
         <section className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {columns.map(col => (
             <Column
@@ -225,10 +234,9 @@ export default function Board() {
           ))}
         </section>
 
-        {/* Drag Overlay */}
         <DragOverlay dropAnimation={dropAnimation}>
           {activeTask ? (
-            <div className="w-64">
+            <div className="w-72 scale-105 opacity-95">
               <TaskCard
                 task={activeTask}
                 onDelete={() => {}}
@@ -239,7 +247,6 @@ export default function Board() {
         </DragOverlay>
       </DndContext>
 
-      {/* Modal */}
       <Modal
         open={modalOpen}
         onClose={() => {

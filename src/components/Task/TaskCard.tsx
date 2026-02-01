@@ -3,7 +3,6 @@
 import { Task } from '@/types/task';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { defaultDropAnimationSideEffects } from '@dnd-kit/core';
 
 interface TaskCardProps {
   task?: Task;
@@ -11,11 +10,7 @@ interface TaskCardProps {
   onEdit: (task: Task) => void;
 }
 
-export default function TaskCard({
-  task,
-  onDelete,
-  onEdit,
-}: TaskCardProps) {
+export default function TaskCard({ task, onDelete, onEdit }: TaskCardProps) {
   if (!task) return null;
 
   const {
@@ -31,38 +26,35 @@ export default function TaskCard({
     transition,
   };
 
-  const dropAnimation = {
-    sideEffects: defaultDropAnimationSideEffects({
-      styles: {
-        active: {
-          opacity: '0.4',
-        }
-      }
-    })
-  }
-
   return (
     <div
       ref={setNodeRef}
       style={style}
+      onPointerDown={e => e.stopPropagation()}
       className="rounded-lg border bg-white p-3 shadow-sm"
     >
-      {/* HEADER + DRAG HANDLE */}
       <div className="mb-2 flex items-center justify-between">
         <h3 className="text-sm font-medium">{task.title}</h3>
 
-        {/* 👇 DRAG HANDLE (ONLY THIS DRAGS) */}
+        {/* Drag Handle */}
         <span
           {...attributes}
           {...listeners}
-          className="cursor-grab select-none text-slate-400 active:cursor-grabbing"
+          className="
+            cursor-grab
+            rounded
+            px-2 py-1
+            text-slate-400
+            active:cursor-grabbing
+            touch-none
+            select-none
+          "
           title="Drag"
         >
           ⠿
         </span>
       </div>
 
-      {/* ACTIONS */}
       <div className="flex gap-3">
         <button
           type="button"
