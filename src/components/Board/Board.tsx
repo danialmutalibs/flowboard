@@ -72,11 +72,12 @@ export default function Board() {
 
   /* ---------------- CRUD ---------------- */
   const handleSaveTask = (task: Task) => {
-    setTasks(prev =>
-      prev.some(t => t.id === task.id)
+    setTasks(prev => {
+      const exists = prev.some(t => t.id === task.id);
+      return exists
         ? prev.map(t => (t.id === task.id ? task : t))
-        : [...prev, { ...task, order: task.order ?? Date.now() }]
-    );
+        : [...prev, { ...task, order: task.order ?? Date.now() }];
+    });
 
     setModalOpen(false);
     setEditingTask(null);
@@ -86,7 +87,7 @@ export default function Board() {
     setTasks(prev => prev.filter(task => task.id !== id));
   };
 
-  /* -------- DERIVED STATE (FILTER + SORT – FIXED) -------- */
+  /* -------- DERIVED STATE (FILTER + SORT) -------- */
   const tasksByStatus = useMemo(() => {
     const grouped: Record<Status, Task[]> = {
       todo: [],
@@ -94,24 +95,17 @@ export default function Board() {
       done: [],
     };
 
-    // group tasks
     for (const task of tasks) {
       grouped[task.status].push(task);
     }
 
-    // filter + sort per column (IMMUTABLE)
-    (Object.keys(grouped) as Status[]).forEach(status => {
-      let columnTasks = [...grouped[status]]; // 🔥 COPY
+    Object.values(grouped).forEach(list => {
+      const filtered =
+        priorityFilter === 'all'
+          ? list
+          : list.filter(task => task.priority === priorityFilter);
 
-      // filter
-      if (priorityFilter !== 'all') {
-        columnTasks = columnTasks.filter(
-          task => task.priority === priorityFilter
-        );
-      }
-
-      // sort
-      columnTasks.sort((a, b) => {
+      filtered.sort((a, b) => {
         if (sortBy === 'createdAt') return b.createdAt - a.createdAt;
         if (sortBy === 'priority') {
           const rank = { high: 3, medium: 2, low: 1 };
@@ -120,7 +114,8 @@ export default function Board() {
         return a.order - b.order;
       });
 
-      grouped[status] = columnTasks;
+      list.length = 0;
+      list.push(...filtered);
     });
 
     return grouped;
@@ -213,7 +208,6 @@ export default function Board() {
   /* ---------------- RENDER ---------------- */
   return (
     <>
-      {/* Filters + Actions */}
       <div className="mb-6 flex flex-wrap items-center gap-4">
         <select
           value={priorityFilter}
